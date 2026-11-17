@@ -1,0 +1,576 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>黒電話ダイヤル</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Kaisei+Tokumin:wght@700;800&family=Klee+One:wght@400;600&family=Zen+Maru+Gothic:wght@500;700&display=swap">
+<style>
+  /* Layout: one narrow column, like looking down at a phone stand against a sand wall —
+     memo taped to the wall, the phone itself, then the phone book lying beside it. */
+  :root {
+    --wall: #5e6548;
+    --wall-deep: #4a5038;
+    --bakelite: #151518;
+    --bakelite-hi: #3a3a42;
+    --plate: #ece3cb;
+    --paper: #f4eedd;
+    --ink: #27241d;
+    --ink-soft: #6a6353;
+    --steel: #c9ccd0;
+    --stamp: #c2372f;
+    --font-display: "Kaisei Tokumin", "Hiragino Mincho ProN", "Yu Mincho", serif;
+    --font-body: "Zen Maru Gothic", "Hiragino Maru Gothic ProN", "Hiragino Sans", "Noto Sans JP", sans-serif;
+    --font-memo: "Klee One", "Hiragino Maru Gothic ProN", "Yu Gothic", sans-serif;
+    color-scheme: light;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; }
+  body {
+    background:
+      url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='2'/%3E%3CfeColorMatrix values='0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 .22 0'/%3E%3C/filter%3E%3Crect width='160' height='160' filter='url(%23n)'/%3E%3C/svg%3E"),
+      radial-gradient(120% 70% at 50% 30%, #6a7152, var(--wall) 55%, var(--wall-deep));
+    background-color: var(--wall);
+    color: var(--plate);
+    font-family: var(--font-body);
+    font-size: 15px;
+    line-height: 1.6;
+    padding-left: max(16px, env(safe-area-inset-left, 0px));
+    padding-right: max(16px, env(safe-area-inset-right, 0px));
+    padding-block: 20px 40px;
+    -webkit-tap-highlight-color: transparent;
+  }
+  .scene { max-width: 440px; margin: 0 auto; display: grid; gap: 20px; }
+
+  header h1 {
+    font-family: var(--font-display); font-weight: 800; font-size: 28px;
+    letter-spacing: .08em; margin: 0; line-height: 1.2; text-wrap: balance;
+  }
+  header p { margin: 4px 0 0; font-size: 13px; color: #dcd8c2; }
+
+  /* ---- memo taped to the wall: status, dialed digits, what the voice says ---- */
+  .memo {
+    position: relative; background: var(--paper); color: var(--ink);
+    padding: 18px 16px 14px; transform: rotate(-.6deg);
+    box-shadow: 0 2px 0 rgba(0,0,0,.08), 0 10px 18px rgba(0,0,0,.28);
+  }
+  .memo::before {
+    content: ""; position: absolute; top: -9px; left: 50%; width: 84px; height: 20px;
+    transform: translateX(-50%) rotate(1.5deg); background: rgba(236,227,203,.62);
+    box-shadow: 0 1px 2px rgba(0,0,0,.18);
+  }
+  .status { font-weight: 700; font-size: 15px; margin: 0; }
+  .digits {
+    font-family: var(--font-body); font-weight: 700; font-size: 26px; letter-spacing: .22em;
+    font-variant-numeric: tabular-nums; margin: 4px 0 2px; min-height: 1.5em;
+    border-bottom: 1px dashed #b9ae94; color: var(--ink);
+  }
+  .digits.empty { color: #b9ae94; }
+  .caption { font-family: var(--font-memo); font-weight: 600; font-size: 16px; margin: 8px 0 0; min-height: 4.8em; }
+
+  /* ---- the phone ---- */
+  .phone-wrap { position: relative; padding: 12px; }
+  .phone-wrap::before { /* lace doily under the phone */
+    content: ""; position: absolute; inset: 34px 0 0; border-radius: 46% / 40%;
+    background: #efe9d8; border: 9px dotted var(--wall);
+    box-shadow: 0 0 0 3px #efe9d8; opacity: .9;
+  }
+  .phone {
+    position: relative; padding: 30px 18px 24px; border-radius: 46px 46px 64px 64px;
+    background: radial-gradient(120% 90% at 30% 12%, var(--bakelite-hi), var(--bakelite) 46%, #0b0b0d);
+    box-shadow: 0 14px 0 #070708, 0 26px 34px rgba(0,0,0,.5), inset 0 2px 1px rgba(255,255,255,.14);
+  }
+  .cradle { position: relative; margin-bottom: 18px; }
+  .cradle::before {
+    content: ""; position: absolute; inset: 10px 18% -4px; border-radius: 14px;
+    background: #070708; box-shadow: inset 0 3px 6px #000;
+  }
+  .handset {
+    position: relative; display: block; width: 78%; height: 54px; margin: 0 auto;
+    border: 0; border-radius: 27px; cursor: pointer;
+    background: linear-gradient(#3d3d45, #17171a 55%, #0c0c0e);
+    color: var(--plate); font: 700 14px/1 var(--font-body); letter-spacing: .06em;
+    box-shadow: 0 6px 0 #050506, 0 12px 16px rgba(0,0,0,.5), inset 0 2px 1px rgba(255,255,255,.2);
+    transition: transform .25s ease, box-shadow .25s ease;
+  }
+  .handset::before, .handset::after {
+    content: ""; position: absolute; top: -8px; width: 74px; height: 70px; border-radius: 26px;
+    background: linear-gradient(#3d3d45, #17171a 55%, #0c0c0e);
+    box-shadow: 0 6px 0 #050506, inset 0 2px 1px rgba(255,255,255,.2);
+  }
+  .handset::before { left: -22px; }
+  .handset::after { right: -22px; }
+  .handset span { position: relative; z-index: 1; }
+  .handset[aria-pressed="true"] {
+    transform: translateY(-16px) rotate(-5deg);
+    box-shadow: 0 6px 0 #050506, 0 30px 26px rgba(0,0,0,.45), inset 0 2px 1px rgba(255,255,255,.2);
+  }
+  .handset:focus-visible { outline: 3px solid var(--plate); outline-offset: 4px; }
+
+  .dial {
+    display: block; width: 100%; max-width: 360px; margin: 0 auto; aspect-ratio: 1;
+    touch-action: none; user-select: none; -webkit-user-select: none; -webkit-touch-callout: none;
+    cursor: grab;
+  }
+  .dial text { font-family: var(--font-body); font-weight: 700; }
+  .dial .num { font-size: 30px; fill: var(--ink); }
+  .dial .label-s { font-size: 12px; fill: var(--ink-soft); letter-spacing: .1em; }
+  .dial .label-n { font-size: 20px; fill: var(--ink); letter-spacing: .04em; }
+  #grab { opacity: 0; }
+  #grab.on { opacity: 1; }
+
+  /* ---- phone book ---- */
+  .book {
+    background: var(--paper); color: var(--ink); padding: 14px 16px 6px;
+    box-shadow: 0 10px 18px rgba(0,0,0,.28); border-left: 10px solid #7b2f2a;
+  }
+  .book-head { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; }
+  .book h2 { font-family: var(--font-display); font-weight: 700; font-size: 20px; letter-spacing: .2em; margin: 0; }
+  .count { font-size: 13px; color: var(--ink-soft); font-variant-numeric: tabular-nums; margin: 0; }
+  .book ul { list-style: none; margin: 8px 0 0; padding: 0; }
+  .row {
+    display: grid; grid-template-columns: minmax(0, 1fr) auto 36px; align-items: center; gap: 10px;
+    padding: 9px 0; border-top: 1px solid #cfc5ab;
+  }
+  .who { min-width: 0; display: grid; }
+  .name { font-family: var(--font-memo); font-weight: 600; font-size: 17px; }
+  .note { font-size: 12px; color: var(--ink-soft); }
+  .tel { font-weight: 700; font-size: 20px; letter-spacing: .12em; font-variant-numeric: tabular-nums; }
+  .stamp {
+    width: 34px; height: 34px; border-radius: 50%; display: grid; place-items: center;
+    border: 1.5px dashed #cfc5ab; color: transparent; font: 700 15px/1 var(--font-display);
+  }
+  .row.found .stamp { border: 2px solid var(--stamp); color: var(--stamp); transform: rotate(-10deg); }
+  .foot { font-size: 12px; color: #dcd8c2; margin: 0; }
+
+  @media (prefers-reduced-motion: reduce) { .handset { transition: none; } }
+</style>
+</head>
+<body>
+<main class="scene">
+  <header>
+    <h1>黒電話ダイヤル</h1>
+    <p>数字の穴に指を入れて、右まわりに金具まで回して離します。</p>
+    <p>かける番号は、電話の下の電話帳にあります。ひみつの番号のヒントもそこに。</p>
+  </header>
+
+  <section class="memo" aria-live="polite">
+    <p class="status" id="status">受話器をタップして上げてください</p>
+    <p class="digits empty" id="digits">ー</p>
+    <p class="caption" id="caption"></p>
+  </section>
+
+  <div class="phone-wrap">
+    <section class="phone" aria-label="黒電話">
+      <div class="cradle">
+        <button class="handset" id="handset" type="button" aria-pressed="false"><span id="handsetLabel">受話器を上げる</span></button>
+      </div>
+      <svg class="dial" id="dial" viewBox="0 0 400 400" role="img" aria-label="回転ダイヤル。キーボードの数字キーでも回せます">
+        <defs>
+          <radialGradient id="gWheel" cx="35%" cy="28%" r="80%">
+            <stop offset="0" stop-color="#3f3f47"/><stop offset=".5" stop-color="#19191c"/><stop offset="1" stop-color="#0a0a0c"/>
+          </radialGradient>
+          <linearGradient id="gSteel" x1="0" x2="1">
+            <stop offset="0" stop-color="#8d9196"/><stop offset=".45" stop-color="#f1f3f5"/><stop offset="1" stop-color="#8d9196"/>
+          </linearGradient>
+        </defs>
+        <circle cx="200" cy="200" r="194" fill="#09090b"/>
+        <circle cx="200" cy="200" r="180" fill="#ece3cb"/>
+        <g id="plateNums"></g>
+        <g id="wheel">
+          <path id="wheelPath" fill="url(#gWheel)" fill-rule="evenodd"/>
+          <g id="rims" fill="none" stroke="#55555e" stroke-width="2"></g>
+          <circle cx="200" cy="200" r="66" fill="url(#gSteel)"/>
+          <circle cx="200" cy="200" r="60" fill="#f4eedd"/>
+          <text class="label-s" x="200" y="190" text-anchor="middle">電話番号</text>
+          <text class="label-n" x="200" y="218" text-anchor="middle">23-4567</text>
+          <circle id="grab" r="27" fill="none" stroke="#ece3cb" stroke-width="3"/>
+        </g>
+        <ellipse cx="140" cy="104" rx="96" ry="36" fill="#ffffff" opacity=".05" transform="rotate(-38 140 104)" pointer-events="none"/>
+        <g transform="rotate(136 200 200)" pointer-events="none">
+          <rect x="196.5" y="12" width="10" height="76" rx="5" fill="#000000" opacity=".35"/>
+          <rect x="195" y="8" width="10" height="78" rx="5" fill="url(#gSteel)"/>
+        </g>
+      </svg>
+    </section>
+  </div>
+
+  <section class="book" aria-label="電話帳">
+    <div class="book-head">
+      <h2>電話帳</h2>
+      <p class="count" id="count"></p>
+    </div>
+    <ul id="bookList"></ul>
+  </section>
+
+  <p class="foot">音が出ます。合成音声が使えない端末では、ピポピポ声と字幕で案内します。</p>
+</main>
+
+<script>
+(() => {
+  'use strict';
+  const $ = id => document.getElementById(id);
+  const NS = 'http://www.w3.org/2000/svg';
+
+  /* ---------- numbers ---------- */
+  const timeText = () => {
+    const d = new Date(), h = d.getHours();
+    return (h < 12 ? '午前' : '午後') + (h % 12) + '時' + d.getMinutes() + '分';
+  };
+  const BOOK = [
+    { id: 'jiho', num: '117', name: '時報', note: 'いま何時?',
+      say: () => 'ただいまから、' + timeText() + 'ごろを、お知らせします。' },
+    { id: 'tenki', num: '177', name: '天気予報', note: '黒電話地方',
+      say: () => '黒電話地方の天気予報です。きょうは、晴れ、ときどき、なつかしい風が吹くでしょう。夕方からは、ところにより、カレーのにおいがするでしょう。' },
+    { id: 'sento', num: '1126', name: '銭湯 松の湯', note: 'いい風呂',
+      say: () => 'はい、松の湯です。本日も、いいお湯、わいてます。コーヒー牛乳、冷えてますよ。' },
+    { id: 'hana', num: '8739', name: '花屋 はなさく', note: '花咲く',
+      say: () => 'お電話ありがとうございます。花屋の、はなさくです。本日のおすすめは、黄色いフリージアです。' },
+    { id: 'ohayo', num: '0840', name: 'モーニングコール', secret: true, hint: '「おはよう」を数字にすると',
+      say: () => 'おはようございます。モーニングコールです。もう起きているあなたは、えらい。二度寝は、ほどほどに。' },
+    { id: 'yoro', num: '4649', name: 'よろしく相談室', secret: true, hint: '「よろしく」を数字にすると',
+      say: () => 'よろしく!あ、失礼しました。こちら、よろしく相談室です。本日も、どうぞよろしくお願いします。' }
+  ];
+  const SELF = '234567';
+  const WRONG = 'おかけになった電話番号は、現在使われておりません。番号をお確かめになって、もう一度おかけ直しください。';
+  const IDLE = '受話器をタップして上げてください';
+
+  /* ---------- saved stamps ---------- */
+  let found = new Set();
+  try { found = new Set(JSON.parse(localStorage.getItem('kurodenwa-found') || '[]')); } catch (e) {}
+  const saveFound = () => { try { localStorage.setItem('kurodenwa-found', JSON.stringify([...found])); } catch (e) {} };
+
+  function renderBook() {
+    const ul = $('bookList');
+    ul.textContent = '';
+    for (const b of BOOK) {
+      const open = !b.secret || found.has(b.id);
+      const li = document.createElement('li');
+      li.className = 'row' + (found.has(b.id) ? ' found' : '');
+      const who = document.createElement('div'); who.className = 'who';
+      const name = document.createElement('span'); name.className = 'name'; name.textContent = open ? b.name : '???';
+      const note = document.createElement('span'); note.className = 'note'; note.textContent = open ? (b.note || b.hint) : 'ヒント:' + b.hint;
+      who.append(name, note);
+      const tel = document.createElement('span'); tel.className = 'tel'; tel.textContent = open ? b.num : '????';
+      const st = document.createElement('span'); st.className = 'stamp'; st.textContent = '済';
+      st.setAttribute('aria-label', found.has(b.id) ? 'つながった' : 'まだ');
+      li.append(who, tel, st);
+      ul.append(li);
+    }
+    $('count').textContent = 'つながった先 ' + BOOK.filter(b => found.has(b.id)).length + '/' + BOOK.length;
+  }
+
+  /* ---------- dial drawing ---------- */
+  const R_HOLE = 130, HOLE = 24, STOP = 120;
+  const DIGITS = ['1','2','3','4','5','6','7','8','9','0'];
+  const holeAng = i => 90 - 30 * (i + 1);          // clock angle, degrees
+  const need = i => STOP - holeAng(i);             // rotation to reach the finger stop
+  const pos = (ang, r) => [200 + r * Math.sin(ang * Math.PI / 180), 200 - r * Math.cos(ang * Math.PI / 180)];
+  const circlePath = (cx, cy, r) => `M${cx - r},${cy}a${r},${r} 0 1,0 ${2 * r},0a${r},${r} 0 1,0 ${-2 * r},0z`;
+
+  let path = circlePath(200, 200, 170);
+  DIGITS.forEach((d, i) => {
+    const [x, y] = pos(holeAng(i), R_HOLE);
+    path += circlePath(x, y, HOLE);
+    const t = document.createElementNS(NS, 'text');
+    t.setAttribute('class', 'num'); t.setAttribute('x', x); t.setAttribute('y', y);
+    t.setAttribute('text-anchor', 'middle'); t.setAttribute('dominant-baseline', 'central');
+    t.textContent = d;
+    $('plateNums').append(t);
+    const c = document.createElementNS(NS, 'circle');
+    c.setAttribute('cx', x); c.setAttribute('cy', y); c.setAttribute('r', HOLE);
+    $('rims').append(c);
+  });
+  $('wheelPath').setAttribute('d', path);
+
+  const svg = $('dial'), wheel = $('wheel'), grab = $('grab');
+  const setRot = a => wheel.setAttribute('transform', `rotate(${a.toFixed(2)} 200 200)`);
+
+  /* ---------- sound ---------- */
+  let ctx = null, master, bus, noiseBuf, dialTone = null;
+  function audio() {
+    if (!ctx) {
+      const AC = window.AudioContext || window.webkitAudioContext;
+      if (!AC) return null;
+      try { ctx = new AC(); } catch (e) { return null; }
+      master = ctx.createGain(); master.gain.value = 0.9; master.connect(ctx.destination);
+      noiseBuf = ctx.createBuffer(1, Math.floor(ctx.sampleRate * 0.05), ctx.sampleRate);
+      const ch = noiseBuf.getChannelData(0);
+      for (let i = 0; i < ch.length; i++) ch[i] = Math.random() * 2 - 1;
+      newBus();
+    }
+    if (ctx.state === 'suspended') ctx.resume();
+    return ctx;
+  }
+  function newBus() {                               // everything "on the line" goes through here
+    if (!ctx) return;
+    if (bus) { const old = bus; old.gain.setTargetAtTime(0, ctx.currentTime, 0.01); setTimeout(() => old.disconnect(), 150); }
+    bus = ctx.createGain(); bus.connect(master); dialTone = null;
+  }
+  function click(vol) {                             // mechanical tick
+    if (!audio()) return;
+    const t = ctx.currentTime, s = ctx.createBufferSource(), f = ctx.createBiquadFilter(), g = ctx.createGain();
+    s.buffer = noiseBuf; f.type = 'highpass'; f.frequency.value = 1700;
+    g.gain.setValueAtTime(vol, t); g.gain.exponentialRampToValueAtTime(0.001, t + 0.03);
+    s.connect(f).connect(g).connect(master); s.start(t); s.stop(t + 0.05);
+  }
+  function thud(vol) {
+    if (!audio()) return;
+    const t = ctx.currentTime, o = ctx.createOscillator(), g = ctx.createGain();
+    o.frequency.setValueAtTime(170, t); o.frequency.exponentialRampToValueAtTime(70, t + 0.08);
+    g.gain.setValueAtTime(vol, t); g.gain.exponentialRampToValueAtTime(0.001, t + 0.1);
+    o.connect(g).connect(master); o.start(t); o.stop(t + 0.12);
+  }
+  function bell() {                                 // the "チン" when the handset goes down
+    if (!audio()) return;
+    const t = ctx.currentTime;
+    [2093, 2794, 4186].forEach((f, i) => {
+      const o = ctx.createOscillator(), g = ctx.createGain();
+      o.frequency.value = f; g.gain.setValueAtTime(0.07 / (i + 1), t);
+      g.gain.exponentialRampToValueAtTime(0.0005, t + 0.9);
+      o.connect(g).connect(master); o.start(t); o.stop(t + 1);
+    });
+    thud(0.25);
+  }
+  function lineTone(freq, at, dur, vol, am) {
+    if (!ctx) return;
+    const o = ctx.createOscillator(), g = ctx.createGain();
+    o.frequency.value = freq;
+    g.gain.setValueAtTime(0, at); g.gain.linearRampToValueAtTime(vol, at + 0.015);
+    g.gain.setValueAtTime(vol, at + dur - 0.03); g.gain.linearRampToValueAtTime(0, at + dur);
+    let out = g;
+    if (am) {
+      const m = ctx.createGain(), l = ctx.createOscillator(), lg = ctx.createGain();
+      m.gain.value = 0.55; l.frequency.value = am; lg.gain.value = 0.45;
+      l.connect(lg).connect(m.gain); l.start(at); l.stop(at + dur);
+      g.connect(m); out = m;
+    }
+    o.connect(g); out.connect(bus); o.start(at); o.stop(at + dur + 0.02);
+  }
+  function startDialTone() {
+    if (!audio()) return;
+    const o = ctx.createOscillator(), g = ctx.createGain();
+    o.frequency.value = 400; g.gain.value = 0; g.gain.setTargetAtTime(0.05, ctx.currentTime + 0.15, 0.03);
+    o.connect(g).connect(bus); o.start();
+    dialTone = { o, g };
+  }
+  function stopDialTone() {
+    if (!dialTone || !ctx) return;
+    const { o, g } = dialTone; dialTone = null;
+    g.gain.setTargetAtTime(0, ctx.currentTime, 0.02); o.stop(ctx.currentTime + 0.2);
+  }
+  function busyTone(n) { if (!audio()) return; for (let i = 0; i < n; i++) lineTone(400, ctx.currentTime + 0.1 + i, 0.5, 0.05); }
+  function blip(ch) {                               // fallback voice: one little note per character
+    if (!audio()) return;
+    const steps = [0, 2, 4, 7, 9, 12], t = ctx.currentTime;
+    const o = ctx.createOscillator(), f = ctx.createBiquadFilter(), g = ctx.createGain();
+    o.type = 'triangle'; o.frequency.value = 260 * Math.pow(2, steps[ch.codePointAt(0) % 6] / 12);
+    f.type = 'bandpass'; f.frequency.value = 1200; f.Q.value = 0.8;
+    g.gain.setValueAtTime(0.16, t); g.gain.exponentialRampToValueAtTime(0.001, t + 0.07);
+    o.connect(f).connect(g).connect(bus); o.start(t); o.stop(t + 0.09);
+  }
+
+  /* ---------- line state ---------- */
+  let state = 'onhook';      // onhook | dialtone | dialing | ringing | talking | ended
+  let session = 0, dialed = '', synth = 'unknown';
+  const sleep = ms => new Promise(r => setTimeout(r, ms));
+  const setStatus = t => { $('status').textContent = t; };
+  function showDigits() {
+    const el = $('digits');
+    el.textContent = dialed ? dialed.split('').join(' ') : 'ー';
+    el.classList.toggle('empty', !dialed);
+  }
+
+  function startSynth(text) {
+    return new Promise(res => {
+      let started = false, done; const ended = new Promise(r => { done = r; });
+      try {
+        speechSynthesis.cancel();
+        const u = new SpeechSynthesisUtterance(text);
+        u.lang = 'ja-JP'; u.rate = 0.95;
+        const v = speechSynthesis.getVoices().find(v => /^ja/i.test(v.lang));
+        if (v) u.voice = v;
+        u.onstart = () => { started = true; res({ started: true, ended }); };
+        u.onend = u.onerror = () => { done(); if (!started) res({ started: false, ended }); };
+        speechSynthesis.speak(u);
+      } catch (e) { res({ started: false, ended }); return; }
+      setTimeout(() => {
+        if (!started) { try { speechSynthesis.cancel(); } catch (e) {} res({ started: false, ended }); }
+      }, synth === 'good' ? 2500 : 1200);
+    });
+  }
+  async function speak(text, s) {
+    const cap = $('caption'); cap.textContent = '';
+    let mode = 'blip', ended = null;
+    if (synth !== 'bad' && window.speechSynthesis && window.SpeechSynthesisUtterance) {
+      const r = await startSynth(text);
+      if (s !== session) { try { speechSynthesis.cancel(); } catch (e) {} return; }
+      synth = r.started ? 'good' : 'bad';
+      if (r.started) { mode = 'synth'; ended = r.ended; }
+    }
+    for (const ch of text) {
+      if (s !== session) return;
+      cap.textContent += ch;
+      const pause = '、。!?'.includes(ch);
+      if (mode === 'blip' && !pause) blip(ch);
+      await sleep(pause ? 280 : (mode === 'synth' ? 105 : 75));
+    }
+    if (mode === 'synth') await Promise.race([ended, sleep(4000)]);
+  }
+
+  function endCall(s) {
+    if (s !== session) return;
+    state = 'ended'; busyTone(5);
+    setStatus('ツー、ツー… 受話器を置いてください');
+  }
+  async function connect(b) {
+    const s = session;
+    state = 'ringing'; stopDialTone(); setStatus('呼び出し中…');
+    await sleep(500); if (s !== session) return;
+    if (audio()) { lineTone(400, ctx.currentTime, 1, 0.07, 16); lineTone(400, ctx.currentTime + 2, 1, 0.07, 16); }
+    await sleep(3300); if (s !== session) return;
+    click(0.5); state = 'talking';
+    setStatus('つながりました:' + b.name);
+    found.add(b.id); saveFound(); renderBook();
+    await speak(b.say(), s); if (s !== session) return;
+    if (b.id === 'jiho') {
+      for (let i = 0; i < 4; i++) {
+        await sleep(i ? 1000 : 400); if (s !== session) return;
+        $('caption').textContent += i < 3 ? ' ピッ' : ' ポーン';
+        if (audio()) lineTone(i < 3 ? 440 : 880, ctx.currentTime, i < 3 ? 0.1 : 1, 0.1);
+      }
+      await sleep(900); if (s !== session) return;
+    }
+    await sleep(600); endCall(s);
+  }
+  async function intercept() {
+    const s = session;
+    state = 'talking'; stopDialTone(); setStatus('どこにもつながりません');
+    await sleep(700); if (s !== session) return;
+    await speak(WRONG, s); if (s !== session) return;
+    await sleep(500); endCall(s);
+  }
+  async function selfCall() {
+    const s = session;
+    state = 'ringing'; stopDialTone(); setStatus('呼び出し中…');
+    await sleep(700); if (s !== session) return;
+    state = 'ended'; busyTone(6);
+    setStatus('話し中です。自分の家にかけています');
+    $('caption').textContent = 'プーッ、プーッ、プーッ…';
+  }
+
+  function onDigit(d) {
+    if (state === 'onhook') { setStatus('先に受話器を上げてください'); return; }
+    if (state !== 'dialtone' && state !== 'dialing') return;
+    stopDialTone();
+    dialed += d; state = 'dialing'; showDigits();
+    const all = BOOK.map(b => b.num).concat(SELF);
+    const hit = BOOK.find(b => b.num === dialed);
+    if (hit) connect(hit);
+    else if (dialed === SELF) selfCall();
+    else if (!all.some(n => n.startsWith(dialed))) intercept();
+    else setStatus('ダイヤル中…');
+  }
+
+  function toggleHook() {
+    audio();
+    const btn = $('handset');
+    session++;
+    if (state === 'onhook') {
+      state = 'dialtone'; dialed = ''; showDigits(); $('caption').textContent = '';
+      click(0.4); startDialTone();
+      setStatus('ツー… と聞こえたら、ダイヤルしてください');
+      btn.setAttribute('aria-pressed', 'true'); $('handsetLabel').textContent = '受話器を置く';
+    } else {
+      state = 'onhook'; newBus();
+      try { window.speechSynthesis && speechSynthesis.cancel(); } catch (e) {}
+      bell(); dialed = ''; showDigits(); $('caption').textContent = '';
+      setStatus(IDLE);
+      btn.setAttribute('aria-pressed', 'false'); $('handsetLabel').textContent = '受話器を上げる';
+    }
+  }
+  $('handset').addEventListener('click', toggleHook);
+
+  /* ---------- turning the wheel ---------- */
+  let drag = null, busy = false;
+  function pointer(e) {
+    const r = svg.getBoundingClientRect(), k = 400 / r.width;
+    const x = (e.clientX - r.left) * k - 200, y = (e.clientY - r.top) * k - 200;
+    return { x: x + 200, y: y + 200, rad: Math.hypot(x, y), ang: Math.atan2(x, -y) * 180 / Math.PI };
+  }
+  function showGrab(i) {
+    const [x, y] = pos(holeAng(i), R_HOLE);
+    grab.setAttribute('cx', x); grab.setAttribute('cy', y); grab.classList.add('on');
+  }
+  svg.addEventListener('pointerdown', e => {
+    if (drag || busy) return;
+    const p = pointer(e);
+    const i = DIGITS.findIndex((d, i) => { const [x, y] = pos(holeAng(i), R_HOLE); return Math.hypot(p.x - x, p.y - y) < 31; });
+    if (i < 0) return;
+    e.preventDefault(); audio();
+    drag = { i, req: need(i), prev: p.ang, acc: 0, tick: 0, atStop: false, id: e.pointerId };
+    try { svg.setPointerCapture(e.pointerId); } catch (err) {}
+    showGrab(i);
+  });
+  svg.addEventListener('pointermove', e => {
+    if (!drag || e.pointerId !== drag.id) return;
+    const p = pointer(e);
+    if (p.rad < 35) return;                          // too close to the centre to read an angle
+    const dl = ((p.ang - drag.prev + 540) % 360) - 180;
+    drag.prev = p.ang;
+    drag.acc = Math.max(0, Math.min(drag.req, drag.acc + dl));
+    setRot(drag.acc);
+    const tk = Math.floor(drag.acc / 12);
+    if (tk > drag.tick) click(0.05);
+    drag.tick = tk;
+    if (drag.acc >= drag.req - 0.5 && !drag.atStop) {
+      drag.atStop = true; thud(0.3);
+      try { navigator.vibrate && navigator.vibrate(12); } catch (err) {}
+    } else if (drag.acc < drag.req - 8) drag.atStop = false;
+  });
+  function release(e) {
+    if (!drag || e.pointerId !== drag.id) return;
+    const { i, req, acc } = drag; drag = null;
+    grab.classList.remove('on');
+    spinBack(acc, i, acc >= req - 8);
+  }
+  svg.addEventListener('pointerup', release);
+  svg.addEventListener('pointercancel', release);
+
+  function spinBack(from, i, valid) {               // constant-speed return, one click per pulse
+    busy = true;
+    let a = from, last = performance.now(), k = valid ? i + 1 : 0;
+    const step = now => {
+      const dt = Math.min(0.05, (now - last) / 1000); last = now;
+      a = Math.max(0, a - 300 * dt);
+      while (k >= 1 && a <= 30 * k) { click(0.32); k--; }
+      setRot(a);
+      if (a > 0) { requestAnimationFrame(step); return; }
+      busy = false;
+      if (valid) onDigit(DIGITS[i]);
+      else if (from > 12) setStatus('金具に当たるまで回してから、指を離してください');
+    };
+    requestAnimationFrame(step);
+  }
+
+  /* number keys turn the wheel too */
+  document.addEventListener('keydown', e => {
+    if (e.ctrlKey || e.metaKey || e.altKey || drag || busy) return;
+    const i = DIGITS.indexOf(e.key);
+    if (i < 0) return;
+    audio(); busy = true; showGrab(i);
+    let a = 0, last = performance.now(); const req = need(i);
+    const wind = now => {
+      const dt = Math.min(0.05, (now - last) / 1000); last = now;
+      a = Math.min(req, a + 420 * dt); setRot(a);
+      if (a < req) { requestAnimationFrame(wind); return; }
+      thud(0.3); grab.classList.remove('on'); spinBack(req, i, true);
+    };
+    requestAnimationFrame(wind);
+  });
+
+  renderBook(); showDigits();
+})();
+</script>
+</body>
+</html>
